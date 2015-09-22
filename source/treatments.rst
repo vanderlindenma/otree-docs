@@ -76,7 +76,11 @@ To solve this, you can alternate treatments, using ``itertools.cycle``:
 
 If you have a factorial design, you can use ``itertools.product`` to generate a list of all your possible treatments, and then use ``itertools.cycle`` to cycle through that list. For instance, if the dimensions of your factorial design are ``[True,False]``, ``['blue','red']`` and ``[1,2]`` :
 
-class Subsession(otree.models.BaseSubsession):
+.. code-block:: python
+    
+    import itertools
+    
+    class Subsession(otree.models.BaseSubsession):
 
         def before_session_starts(self):
             combi_design = [[True,False],['blue','red'],[1,2]]

@@ -136,3 +136,76 @@ Then in the ``before_session_starts`` method, you can check which of the
 Then, when someone visits your demo page, they will see the "red" and
 "blue" treatment, and choose to play one or the other. If the demo
 argument is not passed, the color is randomized.
+
+Treatment variables not fitting into a model field
+--------------------------------
+
+Because treatment variables are stored as model, your treatment 
+variable must fit into one of the field types available in Django.
+If you want to use treatment variable which do not fit into a 
+Django field type, you will have to convert your variable into a string
+first, and then convert the string back to its intended format.
+
+To do so, you can use the ``ast`` package. 
+For instance, if your treatment variable consists in chosing between the
+two lists ``[1,2,3]`` and ``[3,1,2]`` at the level of the group, you 
+would first define a ``treatment`` field on the ``Group`` model:
+
+.. code-block:: python
+
+    class Group(BaseGroup):
+        # ...
+
+        treatment = models.CharField()
+
+Then inside the ``before_subsession_starts`` method, you would turn the 
+chosen list into a string and assign it to ``treatment`` (because 
+``treatment`` is a ``CharField``, it can only be assigned strings)
+
+.. code-block:: python
+
+    def before_session_starts(self):
+        for group in self.get_groups():
+            # Turn the chosen list into a string 
+            group.treatment = '%s' %(random.choice([1,2,3],[3,1,2])
+
+Assuming ``[1,2,3]`` was picked, ``group.treatment`` is now a string of the 
+form ``'[1,2,3]'``. Thus, you will need to define a method that will 
+convert the string ``group.treatment`` back to a list whenever 
+you need it. To do so, first import the package ``ast``:
+
+.. code-block:: python
+
+        # Add the following to the import statements before 
+        # class Constants(BaseConstants):
+        
+        import ast
+
+Then define the following method inside the ``Group`` model:
+
+.. code-block:: python
+
+       class Group(BaseGroup):
+        # ...
+        
+        def convert_to_list(self):
+
+            self.treatment = ast.literal_eval(self.treatment)
+
+You can now use your treatment variable as a list by calling 
+``convert_to_list``. For instance, if you want to use your list
+in the ``Decide`` page, you could call ``convert_to_list`` inside
+the ``vars_for_template`` method inside ``view.py``:
+
+.. code-block:: python
+
+       class Decide(Page):
+        # ...
+        def vars_for_template(self):
+            #...
+            self.group.convert_to_list()
+            
+This will make ``group.treatment`` available as a list in the 
+corresponding template.
+            
+
